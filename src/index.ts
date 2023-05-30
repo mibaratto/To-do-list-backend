@@ -28,3 +28,31 @@ app.get("/ping", async (req: Request, res: Response) => {
         }
     }
 })
+//Get all or get by search term (q)
+app.get("/user",async (req: Request, res: Response)=>{
+    try{
+        const searchedTerm = req.query.q as string | undefined
+
+        if (searchedTerm === undefined){
+            const result = await db("user")
+            res.status(200).send(result)
+
+        }else {
+            const result = await db ("user").where("name", "LIKE", `%${searchedTerm}`)
+            res.status(200).send(result)
+        }
+    }
+    catch (error){
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error){
+            res.send(error.message)
+        }else {
+            res.send("Error inesperado")
+        }
+    }
+})
