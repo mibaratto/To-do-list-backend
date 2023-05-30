@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
+import { db } from './database/knex'
 
 const app = express()
 
@@ -20,7 +21,7 @@ app.get("/ping", async (req: Request, res: Response) => {
             res.status(500)
         }
 
-        if (error instanceof Error) {
+        if (error instanceof Error) { 
             res.send(error.message)
         } else {
             res.send("Erro inesperado")
