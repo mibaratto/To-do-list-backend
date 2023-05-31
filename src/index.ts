@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { db } from './database/knex'
-import { TUserDB } from './types'
+import { TTaskDB, TUserDB } from './types'
 
 const app = express()
 
@@ -229,3 +229,127 @@ app.get("/task", async (req: Request, res: Response) => {
         }
     }
 })
+
+//POST NEW TASK
+
+app.post("/task", async(req: Request, res: Response)=>{
+    try{
+        const { id, title, description } = req.body
+
+        if (typeof id !== "string") {
+            res.status(400)
+            throw new Error("'id' deve ser string")
+        }
+
+        if (id.length < 4) {
+            res.status(400)
+            throw new Error("'id' deve possuir pelo menos 4 caracteres")
+        }
+
+        const newTask ={
+            id,
+            title,
+            description
+        }
+        //insere
+        await db("task").insert(newTask)
+        //pega por id
+        const [ insertedTask ]: TTaskDB[] = await db("task").where({ id })
+        //mostra como resposta
+        res.status(201).send({
+            message: "Task created successfully",
+            task: insertedTask
+        })
+
+    }
+    catch(error){
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
+
+    }
+    
+})
+
+
+//PUT TASK Searched by Id
+
+app.put("/task/id:", async(req: Request, res: Response)=>{
+    try{
+        //pegar a task a ser editada pelo id
+        const idTaskToEdit = req.params.id
+
+        const newId = req.body.id
+        const newTitle = req.body.title
+        const newDescription = req.body.description
+        const newCreatedAt = req.body.createdAt
+        const newStatus = req.body.status
+
+        const [ tasks ]: TTaskDB[] | undefined[] = await db("task").where({id: idTaskToEdit})
+
+        if (!tasks) {
+            res.status(404)
+            throw new Error("'id' não encontrada")
+        }
+
+        const newTask: TTaskDB = {
+            id: newId || tasks.id,
+            title: newTitle || tasks.title,
+            description: newDescription || tasks.description,
+            created_at: newCreatedAt || tasks.created_at,
+            status: isNaN(newStatus) ? tasks.status : newStatus
+        }
+
+        await db("task").update(newTask).where({ id: idTaskToEdit })
+
+        res.status(200).send({
+            message: "Task edited successfully",
+            task: newTask
+        })
+    } 
+    catch(error){
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
+
+
+    }
+})
+
+//Delete Task by Id
+
+app.delete("/task/:id", async (req: Request, res: Response)=>{
+    try {
+        const idTaskToDelete = req.params.q
+
+        const [ taskIdToDelete ]: TTaskDB[] | undefined[] = await db("tasks").where({ id: idTaskToDelete })
+
+        await db("user_task").del().where({ id: idTaskToDelete})
+        await db("task").del().where({ id: idTaskToDelete })
+
+        res.status(200).send({message: "Task Deleted successfully"})
+
+    } 
+    catch(error){
+
+    }
+
+})
+
+//get all user that have a task
