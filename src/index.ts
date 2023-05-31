@@ -154,7 +154,7 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
         await db("user_task").del().where({user_id: idToDelete })
         await db("user").del().where({id: idToDelete})
 
-        res.status(200).send({ message: "User deletado com sucesso" })
+        res.status(200).send({ message: "User deleted successfully" })
 
     }
     catch (error){
@@ -167,21 +167,65 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
         if (error instanceof Error) {
             res.send(error.message)
         } else {
-            res.send("Erro inesperado")
+            res.send("Unexpected Error")
         }
     }
 })
 
-app.get("/task", async(req: Request, res: Response) => {
-    try {
 
-        const result = await db("task")
-        res.status(200).send(result)
+//GET ALL TASKS
+// app.get("/task", async(req: Request, res: Response) => {
+//     try {
 
+//         const result = await db("task")
+//         res.status(200).send(result)
+
+//     }
+
+//     catch(error) {
+//         console.log(error)
+
+//         if (req.statusCode === 200) {
+//             res.status(500)
+//         }
+
+//         if (error instanceof Error) {
+//             res.send(error.message)
+//         } else {
+//             res.send("Unexpected Error")
+//         }
+//     }
+// })
+
+//GET TASK BY SEARCHED TERM
+app.get("/task", async (req: Request, res: Response) => {
+    try{
+        const searchedTerm = req.query.q as string | undefined
+
+        if(searchedTerm === undefined){
+            //console.log("bananinha")
+            const result = await db("task")
+            res.status(200).send(result)
+
+        } else {
+            const result = await db("task")
+                .where("title", "LIKE", `%${searchedTerm}%`)
+                .orWhere("description", "LIKE", `%${searchedTerm}%`)
+            
+                res.status(200).send(result)
+        }
     }
+    catch (error) {
+        console.log(error)
 
-    catch {
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
 
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
     }
 })
-
