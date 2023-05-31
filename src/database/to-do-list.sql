@@ -46,3 +46,4 @@ INSERT INTO user_task (user_id, task_id)
 SELECT * FROM user;
 SELECT * FROM task;
 SELECT * FROM user_task;
+
