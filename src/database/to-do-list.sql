@@ -47,3 +47,8 @@ SELECT * FROM user;
 SELECT * FROM task;
 SELECT * FROM user_task;
 
+DROP TABLE user;
+
+DROP TABLE task;
+
+DROP TABLE user_task;

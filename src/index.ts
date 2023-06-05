@@ -29,7 +29,7 @@ app.get("/ping", async (req: Request, res: Response) => {
         }
     }
 })
-//Get all or get by search term (q)
+
 app.get("/user",async (req: Request, res: Response)=>{
     try{
         const searchedTerm = req.query.q as string | undefined
@@ -39,7 +39,7 @@ app.get("/user",async (req: Request, res: Response)=>{
             res.status(200).send(result)
 
         }else {
-            const result = await db ("user").where("name", "LIKE", `%${searchedTerm}`)
+            const result = await db ("user").where("name", "LIKE", `%${searchedTerm}%`)
             res.status(200).send(result)
         }
     }
@@ -60,6 +60,12 @@ app.get("/user",async (req: Request, res: Response)=>{
 
 app.post("/user", async (req: Request, res: Response) => {
     try{
+        //const id = req.body.id
+        //const name = req.body.name
+        //const email = req.body.email
+        //const password = req.body.password
+        //*** OU destruturado **
+
         const {id, name, email, password} = req.body //como deve ser o corpo da chamada para criar um novo usuário
         
         //validações 
@@ -146,7 +152,7 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
 
         const [ userIdAlreadyExists ]: TUserDB[] | undefined[] = await db("user").where({id: idToDelete})
 
-        if (!userIdAlreadyExists) {
+        if (!userIdAlreadyExists) { //undefined, when ID does not exists
             res.status(404)
             throw new Error ("'id' not found")
         }
@@ -176,19 +182,14 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
 //GET ALL TASKS
 // app.get("/task", async(req: Request, res: Response) => {
 //     try {
-
 //         const result = await db("task")
 //         res.status(200).send(result)
-
 //     }
-
 //     catch(error) {
 //         console.log(error)
-
 //         if (req.statusCode === 200) {
 //             res.status(500)
 //         }
-
 //         if (error instanceof Error) {
 //             res.send(error.message)
 //         } else {
@@ -197,7 +198,7 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
 //     }
 // })
 
-//GET TASK BY SEARCHED TERM
+
 app.get("/task", async (req: Request, res: Response) => {
     try{
         const searchedTerm = req.query.q as string | undefined
