@@ -204,7 +204,6 @@ app.get("/task", async (req: Request, res: Response) => {
         const searchedTerm = req.query.q as string | undefined
 
         if(searchedTerm === undefined){
-            //console.log("bananinha")
             const result = await db("task")
             res.status(200).send(result)
 
@@ -212,7 +211,6 @@ app.get("/task", async (req: Request, res: Response) => {
             const result = await db("task")
                 .where("title", "LIKE", `%${searchedTerm}%`)
                 .orWhere("description", "LIKE", `%${searchedTerm}%`)
-            
                 res.status(200).send(result)
         }
     }
@@ -231,38 +229,57 @@ app.get("/task", async (req: Request, res: Response) => {
     }
 })
 
-//POST NEW TASK
-
 app.post("/task", async(req: Request, res: Response)=>{
     try{
-        const { id, title, description } = req.body
+        const { id, title, description } = req.body //não estamos recebendo todas as colunas
 
         if (typeof id !== "string") {
             res.status(400)
-            throw new Error("'id' deve ser string")
+            throw new Error("'id' should be string")
         }
 
         if (id.length < 4) {
             res.status(400)
-            throw new Error("'id' deve possuir pelo menos 4 caracteres")
+            throw new Error("'id' should be more then 4 characters")
         }
 
-        const newTask ={
+        if (typeof title !== "string") {
+            res.status(400)
+            throw new Error("'title' should be string")
+        }
+
+        if (title.length < 4) {
+            res.status(400)
+            throw new Error("'id' should be more then 4 characters")
+        }
+
+        if (typeof description !== "string") {
+            res.status(400)
+            throw new Error("'description' should be string")
+        }
+        const [ taskIdAlreadyExists ]: TTaskDB[] | undefined[] = await db("task").where({id})
+
+        if(taskIdAlreadyExists){//se existe, significa que não veio undefined
+            res.status(400)
+            throw new Error("'id' alredy exists!")
+        }
+
+        const newTask ={ //não estamos enviando todas as colunas
             id,
             title,
             description
         }
         //insere
         await db("task").insert(newTask)
-        //pega por id
+        //pega por id no banco com todos os dados completos (created_at, status)
         const [ insertedTask ]: TTaskDB[] = await db("task").where({ id })
         //mostra como resposta
         res.status(201).send({
             message: "Task created successfully",
             task: insertedTask
         })
-
     }
+    
     catch(error){
         console.log(error)
 
@@ -275,9 +292,7 @@ app.post("/task", async(req: Request, res: Response)=>{
         } else {
             res.send("Unexpected Error")
         }
-
-    }
-    
+    }  
 })
 
 
