@@ -453,6 +453,7 @@ app.post("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
         }
         //valida se a tarefa existe
         const [ taskIdAlreadyExists ]: TTaskDB[] | undefined[] = await db("task").where({id: taskId})
+        console.log(taskIdAlreadyExists)
 
         if (!taskIdAlreadyExists) { //undefined, when ID does not exists
             res.status(404)
@@ -474,6 +475,62 @@ app.post("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
         }
         await db("user_task").insert(newUserTask)
         res.status(201).send({ message: "User added a taks successfully" })
+
+    }
+    catch (error){
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
+    }
+})
+
+//deletando o vinculo usuário-tarefa
+app.delete("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
+    try {
+        const taskIdToDelete = req.params.taskId
+        const userIdToDelete = req.params.userId
+        console.log(taskIdToDelete)
+        console.log(userIdToDelete)
+
+        if (taskIdToDelete[0] !== "t") {
+            res.status(400)
+            throw new Error ("'id' should begin with the letter 't'")
+        }
+
+        if (userIdToDelete[0] !== "u") {
+            res.status(400)
+            throw new Error ("'id' should begin with the letter 't'")
+        }
+        //valida se a tarefa existe
+        const [ taskIdAlreadyExists ]: TTaskDB[] | undefined[] = await db("task").where({id: taskIdToDelete})
+        console.log(taskIdAlreadyExists)
+
+        if (!taskIdAlreadyExists) { //undefined, when ID does not exists
+            res.status(404)
+            throw new Error ("'task id' not found")
+        }
+
+        //valida se usuário existe
+        const [ userIdAlreadyExists ]: TUserDB[] | undefined[] = await db("user").where({id: userIdToDelete})
+
+        if (!userIdAlreadyExists) { //undefined, when ID does not exists
+            res.status(404)
+            throw new Error ("'user id' not found")
+        }
+
+        await db("user_task").del()
+                .where({task_id: taskIdToDelete} )
+                .andWhere({user_id: userIdToDelete})
+        
+        res.status(200).send({ message: "User removed from task successfully" })
 
     }
     catch (error){
