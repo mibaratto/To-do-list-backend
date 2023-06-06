@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { db } from './database/knex'
-import { TTaskDB, TUserDB } from './types'
+import { TTaskDB, TUserDB, TUserTaskDB } from './types'
 
 const app = express()
 
@@ -201,6 +201,7 @@ app.delete("/user/:id", async (req: Request, res: Response)=>{
 
 app.get("/task", async (req: Request, res: Response) => {
     try{
+        console.log("GET")
         const searchedTerm = req.query.q as string | undefined
 
         if(searchedTerm === undefined){
@@ -279,7 +280,7 @@ app.post("/task", async(req: Request, res: Response)=>{
             task: insertedTask
         })
     }
-    
+
     catch(error){
         console.log(error)
 
@@ -298,30 +299,78 @@ app.post("/task", async(req: Request, res: Response)=>{
 
 //PUT TASK Searched by Id
 
-app.put("/task/id:", async(req: Request, res: Response)=>{
+app.put("/task/:id", async(req: Request, res: Response)=>{
     try{
+        console.log("PUT")
         //pegar a task a ser editada pelo id
         const idTaskToEdit = req.params.id
-
+        console.log(idTaskToEdit)
+        
+        // cada informação é opcional
         const newId = req.body.id
         const newTitle = req.body.title
         const newDescription = req.body.description
         const newCreatedAt = req.body.createdAt
         const newStatus = req.body.status
 
-        const [ tasks ]: TTaskDB[] | undefined[] = await db("task").where({id: idTaskToEdit})
+        if(newId !== undefined) {
+            if (typeof newId !== "string") {
+                res.status(400)
+                throw new Error("'id' should be string")
+            }
+    
+            if (newId.length < 4) {
+                res.status(400)
+                throw new Error("'id' should be more then 4 characters")
+            }
+        }
 
-        if (!tasks) {
+        if(newTitle !== undefined) {
+            if (typeof newTitle  !== "string") {
+                res.status(400)
+                throw new Error("'title' should be string")
+            }
+    
+            if (newId.length < 4) {
+                res.status(400)
+                throw new Error("'title' should be more then 4 characters")
+            }
+        }
+
+        if(newDescription !== undefined) {
+            if (typeof newDescription  !== "string") {
+                res.status(400)
+                throw new Error("'Description' should be string")
+            }
+        }
+
+        if(newCreatedAt !== undefined) {
+            if (typeof newCreatedAt  !== "string") {
+                res.status(400)
+                throw new Error("'date' should be string")
+            }
+        }
+
+        if(newStatus !== undefined) {
+            if (typeof newStatus  !== "string") {
+                res.status(400)
+                throw new Error("'status' should be string")
+            }
+        }
+
+        const [ tasksExists ]: TTaskDB[] | undefined[] = await db("task").where({id: idTaskToEdit})
+
+        if (!tasksExists) {
             res.status(404)
             throw new Error("'id' não encontrada")
         }
 
         const newTask: TTaskDB = {
-            id: newId || tasks.id,
-            title: newTitle || tasks.title,
-            description: newDescription || tasks.description,
-            created_at: newCreatedAt || tasks.created_at,
-            status: isNaN(newStatus) ? tasks.status : newStatus
+            id: newId || tasksExists.id,
+            title: newTitle || tasksExists.title,
+            description: newDescription || tasksExists.description,
+            created_at: newCreatedAt || tasksExists.created_at,
+            status: isNaN(newStatus) ? tasksExists.status : newStatus
         }
 
         await db("task").update(newTask).where({ id: idTaskToEdit })
@@ -348,24 +397,96 @@ app.put("/task/id:", async(req: Request, res: Response)=>{
     }
 })
 
-//Delete Task by Id
-
 app.delete("/task/:id", async (req: Request, res: Response)=>{
     try {
-        const idTaskToDelete = req.params.q
+        const idToDelete = req.params.id
 
-        const [ taskIdToDelete ]: TTaskDB[] | undefined[] = await db("tasks").where({ id: idTaskToDelete })
+        if (idToDelete[0] !== "t") {
+            res.status(400)
+            throw new Error ("'id' should begin with the letter 't'")
+        }
 
-        await db("user_task").del().where({ id: idTaskToDelete})
-        await db("task").del().where({ id: idTaskToDelete })
+        const [ taskIdAlreadyExists ]: TUserDB[] | undefined[] = await db("task").where({id: idToDelete})
 
-        res.status(200).send({message: "Task Deleted successfully"})
+        if (!taskIdAlreadyExists) { //undefined, when ID does not exists
+            res.status(404)
+            throw new Error ("'id' not found")
+        }
 
-    } 
-    catch(error){
+        await db("user_task").del().where({user_id: idToDelete })
+        await db("task").del().where({id: idToDelete})
+
+        res.status(200).send({ message: "Task deleted successfully" })
 
     }
+    catch (error){
+        console.log(error)
 
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
+    }
 })
 
-//get all user that have a task
+//add an user to a task
+app.post("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
+    try {
+        const taskId = req.params.taskId
+        const userId = req.params.userId
+        console.log(taskId)
+        console.log(userId)
+
+        if (taskId[0] !== "t") {
+            res.status(400)
+            throw new Error ("'id' should begin with the letter 't'")
+        }
+
+        if (userId[0] !== "u") {
+            res.status(400)
+            throw new Error ("'id' should begin with the letter 't'")
+        }
+        //valida se a tarefa existe
+        const [ taskIdAlreadyExists ]: TTaskDB[] | undefined[] = await db("task").where({id: taskId})
+
+        if (!taskIdAlreadyExists) { //undefined, when ID does not exists
+            res.status(404)
+            throw new Error ("'task id' not found")
+        }
+
+        //valida se usuário existe
+        const [ userIdAlreadyExists ]: TUserDB[] | undefined[] = await db("user").where({id: userId})
+
+        if (!userIdAlreadyExists) { //undefined, when ID does not exists
+            res.status(404)
+            throw new Error ("'user id' not found")
+        }
+
+        const newUserTask: TUserTaskDB = {
+            task_id: taskId,
+            user_id: userId
+            
+        }
+        await db("user_task").insert(newUserTask)
+        res.status(201).send({ message: "User added a taks successfully" })
+
+    }
+    catch (error){
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }
+    }
+})

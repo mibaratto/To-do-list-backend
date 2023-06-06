@@ -19,7 +19,7 @@ CREATE TABLE user_task (
     user_id TEXT NOT NULL,
     task_id TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id),
-    FOREIGN KEY (task_id) REFERENCES task (id)
+    FOREIGN KEY (task_id) REFERENCES task (id) ON UPDATE CASCADE
 );
 
 INSERT INTO user (id, name, email, password)
