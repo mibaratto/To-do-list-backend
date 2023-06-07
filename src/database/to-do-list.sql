@@ -47,6 +47,33 @@ SELECT * FROM user;
 SELECT * FROM task;
 SELECT * FROM user_task;
 
+ SELECT * FROM user_task
+ INNER JOIN user
+ ON user_task.user_id = user.id
+ INNER JOIN task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ INNER JOIN user_task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id
+ INNER JOIN user
+ ON user_task.user_id = user.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id
+ LEFT JOIN user
+ ON user_task.user_id = user.id;
+
+
 DROP TABLE user;
 
 DROP TABLE task;

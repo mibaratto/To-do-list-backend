@@ -547,3 +547,27 @@ app.delete("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
         }
     }
 })
+
+app.get("/user_task", async(req: Request, res: Response) => {
+    try {
+
+        //const [ user ]: TUserDB = await db("user").where({id})
+        
+        const result = await db("user_task")
+        res.status(200).send(result)
+
+        
+    } catch (error) {
+        console.log(error)
+
+        if (req.statusCode === 200) {
+            res.status(500)
+        }
+
+        if (error instanceof Error) {
+            res.send(error.message)
+        } else {
+            res.send("Unexpected Error")
+        }  
+    }
+})
