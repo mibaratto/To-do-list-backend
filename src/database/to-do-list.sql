@@ -12,14 +12,14 @@ CREATE TABLE task (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     created_at TEXT DEFAULT (DATETIME()) NOT NULL,
-    stauts INTEGER DEFAULT (0) NOT NULL
+    status INTEGER DEFAULT (0) NOT NULL
 );
 
 CREATE TABLE user_task (
     user_id TEXT NOT NULL,
     task_id TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id),
-    FOREIGN KEY (task_id) REFERENCES task (id)
+    FOREIGN KEY (task_id) REFERENCES task (id) ON UPDATE CASCADE
 );
 
 INSERT INTO user (id, name, email, password)
@@ -46,3 +46,36 @@ INSERT INTO user_task (user_id, task_id)
 SELECT * FROM user;
 SELECT * FROM task;
 SELECT * FROM user_task;
+
+ SELECT * FROM user_task
+ INNER JOIN user
+ ON user_task.user_id = user.id
+ INNER JOIN task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ INNER JOIN user_task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id
+ INNER JOIN user
+ ON user_task.user_id = user.id;
+
+ SELECT * FROM task
+ LEFT JOIN user_task
+ ON user_task.task_id = task.id
+ LEFT JOIN user
+ ON user_task.user_id = user.id;
+
+
+DROP TABLE user;
+
+DROP TABLE task;
+
+DROP TABLE user_task;
