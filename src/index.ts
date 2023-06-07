@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { db } from './database/knex'
-import { TTaskDB, TUserDB, TUserTaskDB } from './types'
+import { TTaskDB, TTaskWithUsers, TUserDB, TUserTaskDB } from './types'
 
 const app = express()
 
@@ -548,13 +548,51 @@ app.delete("/task/:taskId/user/:userId", async (req: Request, res: Response)=>{
     }
 })
 
-app.get("/user_task", async(req: Request, res: Response) => {
+app.get("/task/user", async(req: Request, res: Response) => {
     try {
 
-        //const [ user ]: TUserDB = await db("user").where({id})
+        // const result = await db("task")
+        //     .select(
+        //         "task.id AS taskId",
+        //         "title",
+        //         "description",
+        //         "created_at AS createdAt",
+        //         "status",
+        //         "user_id AS userId",
+        //         "name",
+        //         "email",
+        //         "password"
+        //     )
+        //     .leftJoin("user_task", "user_task.task_id", "=", "task.id")
+        //     .leftJoin("user", "user_task.user_id", "=", "user.id")
         
-        const result = await db("user_task")
+        // res.status(200).send(result)
+
+        const tasks: TTaskDB[] = await db("task")//seleciona todas as tarefas na tabela task e cria um array
+        //o qual vai ser a base da iteração
+
+        const result: TTaskWithUsers[] = [] //modelagem do resultado
+
+        for(let task of tasks) {//for of funciona para fluxo assincrono
+            //para cada tarefa vou procurar na user_task as relações que estão aparecendo...
+
+            const responsibles = []
+            //para cada task tem um array de users responsáveis por realizar a tarefa
+            const relationsUsersTasks: TUserTaskDB[] = await db("user_task").where({task_id: task.id})
+            //...acesso a tabela de relações user_task procurando match do task_id(FK) com id da tabela task(PK)
+                for (let relationUserTask of relationsUsersTasks ) {
+                    const [ user ]: TUserDB[] = await db("user").where({id: relationUserTask.user_id}) //qdo se espera receber um unico item se desestrutura
+                    responsibles.push(user)
+                }
+                const newTTaskWithUsers: TTaskWithUsers = {
+                    ...task,
+                    responsibles
+                }
+                result.push(newTTaskWithUsers)
+        }
+        
         res.status(200).send(result)
+
 
         
     } catch (error) {

@@ -12,7 +12,7 @@ CREATE TABLE task (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     created_at TEXT DEFAULT (DATETIME()) NOT NULL,
-    stauts INTEGER DEFAULT (0) NOT NULL
+    status INTEGER DEFAULT (0) NOT NULL
 );
 
 CREATE TABLE user_task (
